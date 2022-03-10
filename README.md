@@ -40,7 +40,9 @@ python train_synthetic.py --problem 2d_rot8 --model conv  # MAML+Conv on 2d_rot8
 In order to run experiments with `share_conv`, use PyTorch `1.4.0`. Neither PyTorch `1.1` nor PyTorch `1.8.0` will work. 
 
 ## Test for visualizing the parameter distribution
+```sh
 python test.py --problem rank1 --model share_fc  # MSR+FC on rank1 problem.
+```
 
 ## Augmented-(Omniglot/Miniimagenet)
 
