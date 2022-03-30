@@ -28,6 +28,7 @@ def main():
     parser.add_argument("--problem", type=str, default="rank1")
     parser.add_argument("--model", type=str, default="conv")
     parser.add_argument("--device", type=str, default="cpu")
+    parser.add_argument("--tasks_number", type=str, default=None)
 
     if not os.path.exists(OUTPUT_PATH):
         os.makedirs(OUTPUT_PATH)
@@ -78,9 +79,10 @@ def main():
             raise ValueError(f"Invalid model {args.model}")
 
     files = [f for f in listdir(OUTPUT_PATH) if isfile(join(OUTPUT_PATH, f))]
+    print(files)
     version = []
     for f in files:
-        if f.split('-')[0] == project_name and f.split('-')[1] + '-' + f.split('-')[2] == group_name:
+        if f.split('-')[0] == project_name and f.split('-')[1] + '-' + f.split('-')[2] == group_name and f.split('-')[3] == args.tasks_number:
             version.append(f.split('-')[-1][:-4])
     for i in range(len(version)):
         print("({})".format(i + 1) + " : version " + version[i])
@@ -88,7 +90,7 @@ def main():
     assert (answer.isdigit())
     answer = int(answer)
     assert (1 <= answer <= len(version))
-    net.load_state_dict(torch.load(OUTPUT_PATH + "/{}-{}-{}.pth".format(project_name, group_name, version[answer - 1])))
+    net.load_state_dict(torch.load(OUTPUT_PATH + "/{}-{}-{}-{}.pth".format(project_name, group_name, str(args.tasks_number), version[answer - 1])))
 
     is_warp = False
     warp_params = []
@@ -102,10 +104,17 @@ def main():
             is_warp = True
             warp_params.append(net.state_dict()[k].detach().cpu().numpy())
 
+    visual_out_path = "./outputs/synthetic_outputs/weight_visualization/"
+
     if is_warp:
         print("Model is shared. ")
-        # for w in warp_params:
-            # params_histogram(w)
+        for w in warp_params:
+            _ = plt.hist(w, bins=20, range=(0., 1.))  # arguments are passed to np.histogram
+            plt.title("Symmetry Matrix absolute Weights Histogram ")
+            if not os.path.exists(visual_out_path + "hist_dist/"):
+                os.makedirs(visual_out_path + "hist_dist/")
+            plt.savefig(visual_out_path+"hist_dist/" + project_name + "-" + group_name + "-" +str(args.tasks_number))
+            plt.close()
 
     for i in range(len(net)):
         if isinstance(net[0], layers.ShareLinearFull):
@@ -113,15 +122,21 @@ def main():
             out_features = net[0].out_features
             x = np.max(np.abs(net[0].warp.view(out_features,in_features,-1).detach().cpu().numpy()),axis=2)
             plt.imshow(x, cmap='viridis', interpolation='nearest')
+            plt.title("Symmetry Matrix absolute Weights (maximum over filter size) ")
             plt.colorbar()
-            plt.show()
+            if not os.path.exists(visual_out_path + "heat_sym_matrix/"):
+                os.makedirs(visual_out_path + "heat_sym_matrix/")
+            plt.xticks([])
+            plt.yticks([])
+            plt.savefig(visual_out_path + "heat_sym_matrix/" + project_name + "-" + group_name + "-" + str(args.tasks_number))
 
-
+"""
 def params_histogram(params_tensor):
     # np.histogram(np.abs(params_tensor), bins=50, range=(0., 1.))
     _ = plt.hist(params_tensor, bins=20, range=(0., 1.))  # arguments are passed to np.histogram
     plt.title("Histogram with weights absolute value ")
     plt.show()
+    """
 
 
 if __name__ == "__main__":

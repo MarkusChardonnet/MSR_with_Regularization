@@ -18,6 +18,9 @@ from inner_optimizers import InnerOptBuilder
 
 OUTPUT_PATH = "./outputs/synthetic_outputs"
 
+TRAIN_BATCH = 32
+TEST_BATCH = 10
+
 
 def train(step_idx, data, net, inner_opt_builder, meta_opt, n_inner_iter):
 	"""Main meta-training step."""
@@ -98,6 +101,7 @@ def main():
 	parser.add_argument("--problem", type=str, default="rank1")
 	parser.add_argument("--model", type=str, default="conv")
 	parser.add_argument("--device", type=str, default="cpu")
+	parser.add_argument("--tasks_number", type=str, default=None)           #
 
 	if not os.path.exists(OUTPUT_PATH):
 		os.makedirs(OUTPUT_PATH)
@@ -108,7 +112,7 @@ def main():
 	wandb.config.update(args)
 	cfg = wandb.config
 	device = torch.device(cfg.device)
-	db = SyntheticLoader(device, problem=cfg.problem, k_spt=cfg.k_spt, k_qry=cfg.k_qry)
+	db = SyntheticLoader(device, problem=cfg.problem, tasks_number=cfg.tasks_number, k_spt=cfg.k_spt, k_qry=cfg.k_qry)
 	
 	if cfg.problem in ["2d_rot8_flip", "2d_rot8", "2d_rot4"]:
 		if cfg.problem == "2d_rot8": # C_8, 8 elements
@@ -161,10 +165,10 @@ def main():
 
 	start_time = time.time()
 	for step_idx in range(cfg.num_outer_steps):
-		data, _filters = db.next(32, "train")
+		data, _filters = db.next(TRAIN_BATCH, "train")
 		train(step_idx, data, net, inner_opt_builder, meta_opt, cfg.num_inner_steps)
 		if step_idx == 0 or (step_idx + 1) % 100 == 0:
-			test_data, _filters  = db.next(300, "test")
+			test_data, _filters  = db.next(TEST_BATCH, "test")                     #
 			val_loss = test(
 				step_idx,
 				test_data,
@@ -178,7 +182,7 @@ def main():
 				print(f"Step: {step_idx}. Steps/sec: {steps_p_sec:.2f}")
 
 	# save final model 
-	model_file_name = "{}-{}-{}.pth".format(project_name, group_name, np.random.randint(low=0, high=100000))
+	model_file_name = "{}-{}-{}-{}.pth".format(project_name, group_name, str(args.tasks_number), np.random.randint(low=0, high=100000))
 	model_file_dir = os.path.join(OUTPUT_PATH, "models")
 	if not os.path.exists(model_file_dir):
 		os.makedirs(model_file_dir)

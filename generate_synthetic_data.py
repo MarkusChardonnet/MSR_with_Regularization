@@ -10,13 +10,13 @@ import torch
 from torch import nn
 from layers import LocallyConnected1d
 
-os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
-def generate_1d(out_path):
+def generate_1d(out_path, tasks_number):
     lc_layer = LocallyConnected1d(1, 1, 68, bias=False)
     xs, ys, ws = [], [], []
-    for task_idx in range(10000):
+    for task_idx in range(tasks_number):
         filt = np.random.randn(1, 1, 1, 1, 3).astype(np.float32)
         filt = np.repeat(filt, 68, axis=3)
         ws.append(filt)
@@ -33,11 +33,11 @@ def generate_1d(out_path):
     np.savez(out_path, x=xs, y=ys, w=ws)
 
 
-def generate_1d_low_rank(out_path, rank=2):
+def generate_1d_low_rank(out_path, tasks_number, rank=2):
     lc_layer = LocallyConnected1d(1, 1, 68, bias=False)
     xs, ys, ws = [], [], []
     connectivity = softmax(np.random.randn(68, rank), axis=1)  # shape == (68, rank)
-    for task_idx in range(10000):
+    for task_idx in range(tasks_number):
         basis = np.random.randn(rank, 3)
         filt = np.dot(connectivity, basis)  # shape == (68, 3)
         filt = np.reshape(filt, (1, 1, 1, 68, 3)).astype(np.float32)
@@ -148,19 +148,30 @@ TYPE_2_PATH = {
 }
 
 
+def type_2_path(problem, tasks_number=None):
+    if problem in TYPE_2_PATH.keys():
+        if tasks_number is None:
+            return "./data/" + problem + '.npz'
+        else:
+            return "./data/" + problem + '_' + str(tasks_number) + '.npz'
+    else:
+        return
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--problem", type=str, default="rank1")
+    parser.add_argument("--tasks_number", type=int, default=1000)
     args = parser.parse_args()
-    out_path = TYPE_2_PATH[args.problem]
+    out_path = type_2_path(args.problem, args.tasks_number)
     if os.path.exists(out_path):
         raise ValueError(f"File exists at {out_path}.")
     if args.problem == "rank1":
-        generate_1d(out_path)
+        generate_1d(out_path, args.tasks_number)
     elif args.problem == "rank2":
-        generate_1d_low_rank(out_path, rank=2)
+        generate_1d_low_rank(out_path, args.tasks_number, rank=2)
     elif args.problem == "rank5":
-        generate_1d_low_rank(out_path, rank=5)
+        generate_1d_low_rank(out_path, args.tasks_number, rank=5)
     elif args.problem == "2d_rot8":
         generate_2d_rot8(out_path)
     elif args.problem == "2d_rot8_flip":
@@ -177,4 +188,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

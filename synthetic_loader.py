@@ -2,13 +2,13 @@
 
 import numpy as np
 import torch
-from generate_synthetic_data import TYPE_2_PATH
+from generate_synthetic_data import type_2_path
 
 
 class SyntheticLoader:
-    def __init__(self, device, problem="default", k_spt=1, k_qry=19):
+    def __init__(self, device, problem="default", tasks_number = None, k_spt=1, k_qry=19):
         self.device = device
-        data = np.load(TYPE_2_PATH[problem])
+        data = np.load(type_2_path(problem, tasks_number))
         self.xs, self.ys, self.ws = data["x"], data["y"], data["w"]
         # xs shape: (10000, 20, c_i, ...)
         # ys shape: (10000, 20, c_o, ...)
