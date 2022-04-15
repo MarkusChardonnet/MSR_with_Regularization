@@ -165,18 +165,25 @@ class PathFileNames:
         self.group_name = "{}-{}".format(args.problem, args.model)
         self.epochs = args.num_outer_steps
 
+    """
     def get_model_path(self):
         return os.path.join(os.path.dirname(__file__), os.path.join('outputs', 'synthetic_outputs', \
                                                                     'sparsity_model', 'models'))
+    """
 
     def get_model_file_name(self):
-        model_file_name = "{}-{}_{}-{}_{}-{}_{}-{}_".format(self.group_name, "ntasks",
-                                                            str(self.ntasks), \
+        model_file_name = "{}_{}-{}_{}-{}_".format(
                                                             "lam", str(self.lam_reg), "epochs",
                                                             str(self.epochs), "version")
         return model_file_name
 
-    def get_file_path(self, mode='base'):
+    """
+    {}-{}_{}-{}_{}-{}_{}-{}_
+    self.group_name, "ntasks",
+                                                            str(self.ntasks), \
+                                                            """
+
+    def get_base_path(self, mode='base'):
         path = os.path.join(os.path.dirname(__file__), os.path.join('outputs', 'synthetic_outputs'))
         if mode == 'base':
             path = os.path.join(path, 'base_model')
@@ -184,13 +191,16 @@ class PathFileNames:
             path = os.path.join(path, 'sparsity_model')
         return path
 
+    def get_extention_path(self):
+        return os.path.join(self.group_name, 'ntasks' + str(self.ntasks))
+
     def get_visual_out_path(self, mode='base'):
-        path = self.get_file_path(mode)
-        path = os.path.join(path, 'weight_visualization')
+        path = self.get_base_path(mode)
+        path = os.path.join(path, 'weight_visualization', self.get_extention_path())
         return path
 
     def get_model_file_path(self, mode='base'):
-        model_file_dir = os.path.join(self.get_file_path(mode), 'models')
+        model_file_dir = os.path.join(self.get_base_path(mode), 'models', self.get_extention_path())
         model_file_name = self.get_model_file_name()
         files = [f for f in os.listdir(model_file_dir) if os.path.isfile(os.path.join(model_file_dir, f))]
         version = []
@@ -210,9 +220,10 @@ class PathFileNames:
         return os.path.join(model_file_dir, model_file_name), version[answer - 1]
 
     def set_model_file_path(self, mode='base'):
-        model_file_dir = os.path.join(self.get_file_path(mode), 'models')
+        model_file_dir = os.path.join(self.get_base_path(mode), 'models', self.get_extention_path())
         if not os.path.exists(model_file_dir):
             os.makedirs(model_file_dir)
+        print(model_file_dir)
         model_file_name = self.get_model_file_name()
         files = [f for f in os.listdir(model_file_dir) if os.path.isfile(os.path.join(model_file_dir, f))]
         version = []
@@ -258,7 +269,7 @@ def main():
     group_name = "{}-{}".format(args.problem, args.model)
     if args.wandb:
         wandb_run = wandb.init(project=project_name, group=group_name,
-                               dir=os.path.join(path_name.get_file_path(mode=mode), 'models'))
+                               dir=os.path.join(path_name.get_base_path(mode=mode), 'models'))
         wandb.config.update(args)
     device = torch.device(args.device)
     db = SyntheticLoader(device, problem=args.problem, ntasks=args.ntasks, k_spt=args.k_spt, k_qry=args.k_qry)
@@ -337,6 +348,7 @@ def main():
 
     # save final model
     model_file_path = path_name.set_model_file_path(mode=mode)
+    print(model_file_path)
     torch.save(net.state_dict(), model_file_path)
     if args.wandb:
         artifact = wandb.Artifact("model", type="model")
@@ -346,8 +358,8 @@ def main():
 
     # Test loss result
     path_name = PathFileNames(args)
-    model_file_path, version = path_name.get_model_file_path(mode='sparsity')
-    visual_out_path = path_name.get_visual_out_path(mode='sparsity')
+    model_file_path, version = path_name.get_model_file_path(mode=mode)
+    visual_out_path = path_name.get_visual_out_path(mode=mode)
     visual_file_name = path_name.get_model_file_name() + str(version)
     val_loss = test(-1, test_data, net, inner_opt_builder, args.num_inner_steps)
     if not os.path.exists(os.path.join(visual_out_path, "loss")):

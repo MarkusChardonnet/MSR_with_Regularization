@@ -32,6 +32,10 @@ def main():
     args = parser.parse_args()
     group_name = "{}-{}".format(args.problem, args.model)
     device = torch.device(args.device)
+    if args.trainer == 'base':
+        mode = 'base'
+    else:
+        mode = 'sparsity'
 
     if args.problem in ["2d_rot8_flip", "2d_rot8", "2d_rot4"]:
         if args.problem == "2d_rot8":  # C_8, 8 elements
@@ -75,9 +79,9 @@ def main():
             raise ValueError(f"Invalid model {args.model}")
 
     path_name = PathFileNames(args)
-    model_file_path, version = path_name.get_model_file_path(mode='sparsity')
+    model_file_path, version = path_name.get_model_file_path(mode=mode)
     net.load_state_dict(torch.load(model_file_path))
-    visual_out_path = path_name.get_visual_out_path(mode='sparsity')
+    visual_out_path = path_name.get_visual_out_path(mode=mode)
     visual_file_name = path_name.get_model_file_name() + str(version)
 
     is_warp = False
