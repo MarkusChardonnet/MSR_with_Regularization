@@ -13,10 +13,10 @@ from layers import LocallyConnected1d
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
-def generate_1d(out_path, tasks_number):
+def generate_1d(out_path, ntasks = 100):
     lc_layer = LocallyConnected1d(1, 1, 68, bias=False)
     xs, ys, ws = [], [], []
-    for task_idx in range(tasks_number):
+    for task_idx in range(ntasks):
         filt = np.random.randn(1, 1, 1, 1, 3).astype(np.float32)
         filt = np.repeat(filt, 68, axis=3)
         ws.append(filt)
@@ -33,11 +33,11 @@ def generate_1d(out_path, tasks_number):
     np.savez(out_path, x=xs, y=ys, w=ws)
 
 
-def generate_1d_low_rank(out_path, tasks_number, rank=2):
+def generate_1d_low_rank(out_path, rank=2, ntasks = 100):
     lc_layer = LocallyConnected1d(1, 1, 68, bias=False)
     xs, ys, ws = [], [], []
     connectivity = softmax(np.random.randn(68, rank), axis=1)  # shape == (68, rank)
-    for task_idx in range(tasks_number):
+    for task_idx in range(ntasks):
         basis = np.random.randn(rank, 3)
         filt = np.dot(connectivity, basis)  # shape == (68, 3)
         filt = np.reshape(filt, (1, 1, 1, 68, 3)).astype(np.float32)
@@ -55,11 +55,11 @@ def generate_1d_low_rank(out_path, tasks_number, rank=2):
     np.savez(out_path, x=xs, y=ys, w=ws)
 
 
-def generate_1d_low_rank_kernel5(out_path, rank=2, kernel_size=5):
+def generate_1d_low_rank_kernel5(out_path, rank=2, kernel_size=5, ntasks = 100):
     lc_layer = LocallyConnected1d(1, 1, 68, bias=False, kernel_size=kernel_size)
     xs, ys, ws = [], [], []
     connectivity = softmax(np.random.randn(68, rank), axis=1)  # shape == (68, rank)
-    for task_idx in range(10000):
+    for task_idx in range(ntasks):
         basis = np.random.randn(rank, kernel_size)
         filt = np.dot(connectivity, basis)  # shape == (68, 3)
         filt = np.reshape(filt, (1, 1, 1, 68, kernel_size)).astype(np.float32)
@@ -77,13 +77,13 @@ def generate_1d_low_rank_kernel5(out_path, rank=2, kernel_size=5):
     np.savez(out_path, x=xs, y=ys, w=ws)
 
 
-def generate_2d_rot4(out_path):
+def generate_2d_rot4(out_path, ntasks = 100):
     r2_act = gspaces.Rot2dOnR2(N=4)
     feat_type_in = gnn.FieldType(r2_act, [r2_act.trivial_repr])
     feat_type_out = gnn.FieldType(r2_act, 3 * [r2_act.regular_repr])
     conv = gnn.R2Conv(feat_type_in, feat_type_out, kernel_size=3, bias=False)
     xs, ys, ws = [], [], []
-    for task_idx in range(10000):
+    for task_idx in range(ntasks):
         gnn.init.generalized_he_init(conv.weights, conv.basisexpansion)
         inp = gnn.GeometricTensor(torch.randn(20, 1, 32, 32), feat_type_in)
         result = conv(inp).tensor.detach().cpu().numpy()
@@ -96,13 +96,13 @@ def generate_2d_rot4(out_path):
     np.savez(out_path, x=xs, y=ys, w=ws)
 
 
-def generate_2d_rot8(out_path):
+def generate_2d_rot8(out_path, ntasks = 100):
     r2_act = gspaces.Rot2dOnR2(N=8)
     feat_type_in = gnn.FieldType(r2_act, [r2_act.trivial_repr])
     feat_type_out = gnn.FieldType(r2_act, 3 * [r2_act.regular_repr])
     conv = gnn.R2Conv(feat_type_in, feat_type_out, kernel_size=3, bias=False)
     xs, ys, ws = [], [], []
-    for task_idx in range(10000):
+    for task_idx in range(ntasks):
         gnn.init.generalized_he_init(conv.weights, conv.basisexpansion)
         inp = gnn.GeometricTensor(torch.randn(20, 1, 32, 32), feat_type_in)
         result = conv(inp).tensor.detach().cpu().numpy()
@@ -115,14 +115,14 @@ def generate_2d_rot8(out_path):
     np.savez(out_path, x=xs, y=ys, w=ws)
 
 
-def generate_2d_rot8_flip(out_path):
+def generate_2d_rot8_flip(out_path, ntasks = 100):
     r2_act = gspaces.FlipRot2dOnR2(N=8)
     feat_type_in = gnn.FieldType(r2_act, [r2_act.trivial_repr])
     feat_type_out = gnn.FieldType(r2_act, 3 * [r2_act.regular_repr])
     xs, ys, ws = [], [], []
     device = torch.device("cuda")
     conv = gnn.R2Conv(feat_type_in, feat_type_out, kernel_size=3, bias=False).to(device)
-    for task_idx in range(2000):
+    for task_idx in range(ntasks):
         gnn.init.generalized_he_init(conv.weights, conv.basisexpansion)
         inp = gnn.GeometricTensor(torch.randn(20, 1, 32, 32).to(device), feat_type_in)
         result = conv(inp).tensor.detach().cpu().numpy()
@@ -148,12 +148,12 @@ TYPE_2_PATH = {
 }
 
 
-def type_2_path(problem, tasks_number=None):
+def type_2_path(problem, ntasks=None):
     if problem in TYPE_2_PATH.keys():
-        if tasks_number is None:
+        if ntasks is None:
             return "./data/" + problem + '.npz'
         else:
-            return "./data/" + problem + '_' + str(tasks_number) + '.npz'
+            return "./data/" + problem + '_' + str(ntasks) + '.npz'
     else:
         return
 
@@ -161,27 +161,27 @@ def type_2_path(problem, tasks_number=None):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--problem", type=str, default="rank1")
-    parser.add_argument("--tasks_number", type=int, default=1000)
+    parser.add_argument("--ntasks", type=int, default=1000)
     args = parser.parse_args()
-    out_path = type_2_path(args.problem, args.tasks_number)
+    out_path = type_2_path(args.problem, args.ntasks)
     if os.path.exists(out_path):
         raise ValueError(f"File exists at {out_path}.")
     if args.problem == "rank1":
-        generate_1d(out_path, args.tasks_number)
+        generate_1d(out_path, ntasks = args.ntasks)
     elif args.problem == "rank2":
-        generate_1d_low_rank(out_path, args.tasks_number, rank=2)
+        generate_1d_low_rank(out_path, args.ntasks, rank=2, ntasks = args.ntasks)
     elif args.problem == "rank5":
-        generate_1d_low_rank(out_path, args.tasks_number, rank=5)
+        generate_1d_low_rank(out_path, args.ntasks, rank=5, ntasks = args.ntasks)
     elif args.problem == "2d_rot8":
-        generate_2d_rot8(out_path)
+        generate_2d_rot8(out_path, ntasks = args.ntasks)
     elif args.problem == "2d_rot8_flip":
-        generate_2d_rot8_flip(out_path)
+        generate_2d_rot8_flip(out_path, ntasks = args.ntasks)
     elif args.problem == "2d_rot4":
-        generate_2d_rot4(out_path)
+        generate_2d_rot4(out_path, ntasks = args.ntasks)
     elif args.problem == "rank2_kernel5":
-        generate_1d_low_rank_kernel5(out_path, rank=2, kernel_size=5)
+        generate_1d_low_rank_kernel5(out_path, rank=2, kernel_size=5, ntasks = args.ntasks)
     elif args.problem == "rank5_kernel5":
-        generate_1d_low_rank_kernel5(out_path, rank=5, kernel_size=5)
+        generate_1d_low_rank_kernel5(out_path, rank=5, kernel_size=5, ntasks = args.ntasks)
     else:
         raise ValueError(f"Unrecognized problem {args.problem}")
 

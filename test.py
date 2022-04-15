@@ -6,6 +6,9 @@ import numpy as np
 import torch
 from torch import nn
 import matplotlib.pyplot as plt
+from synthetic_loader import SyntheticLoader
+from inner_optimizers import InnerOptBuilder
+import train_synthetic_sparsity
 
 import layers
 
@@ -13,14 +16,7 @@ from os import listdir
 from os.path import isfile, join
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
-OUTPUT_PATH = "./outputs/synthetic_outputs/models"
-
-"""
-
-print(net.state_dict())
-print(net.state_dict().keys())
-print(torch.abs(net.state_dict()['0.warp']).median())
-"""
+from train_synthetic_sparsity import PathFileNames
 
 
 def main():
@@ -28,12 +24,12 @@ def main():
     parser.add_argument("--problem", type=str, default="rank1")
     parser.add_argument("--model", type=str, default="conv")
     parser.add_argument("--device", type=str, default="cpu")
-    parser.add_argument("--tasks_number", type=str, default=None)
+    parser.add_argument("--ntasks", type=str, default=None)
+    parser.add_argument("--lam_reg", type=float, default=0.001)
+    parser.add_argument("--num_outer_steps", type=int, default=1000)
+    parser.add_argument("--trainer", type=str, default='base')
 
-    if not os.path.exists(OUTPUT_PATH):
-        os.makedirs(OUTPUT_PATH)
     args = parser.parse_args()
-    project_name = "weight_sharing_toy"
     group_name = "{}-{}".format(args.problem, args.model)
     device = torch.device(args.device)
 
@@ -78,44 +74,36 @@ def main():
         else:
             raise ValueError(f"Invalid model {args.model}")
 
-    files = [f for f in listdir(OUTPUT_PATH) if isfile(join(OUTPUT_PATH, f))]
-    print(files)
-    version = []
-    for f in files:
-        if f.split('-')[0] == project_name and f.split('-')[1] + '-' + f.split('-')[2] == group_name and f.split('-')[3] == args.tasks_number:
-            version.append(f.split('-')[-1][:-4])
-    for i in range(len(version)):
-        print("({})".format(i + 1) + " : version " + version[i])
-    answer = input("Chosen version : ")
-    assert (answer.isdigit())
-    answer = int(answer)
-    assert (1 <= answer <= len(version))
-    net.load_state_dict(torch.load(OUTPUT_PATH + "/{}-{}-{}-{}.pth".format(project_name, group_name, str(args.tasks_number), version[answer - 1])))
+    path_name = PathFileNames(args)
+    model_file_path, version = path_name.get_model_file_path(mode='sparsity')
+    net.load_state_dict(torch.load(model_file_path))
+    visual_out_path = path_name.get_visual_out_path(mode='sparsity')
+    visual_file_name = path_name.get_model_file_name() + str(version)
 
     is_warp = False
     warp_params = []
-    print("Parameter tensors :")
-    print()
+    # print("Parameter tensors :")
+    # print()
     for k in net.state_dict().keys():
-        print("Parameter : ", k)
-        print("Shape : ", net.state_dict()[k].detach().cpu().shape)
-        print()
+        # print("Parameter : ", k)
+        # print("Shape : ", net.state_dict()[k].detach().cpu().shape)
+        # print()
         if k[-4:] == "warp":
             is_warp = True
             warp_params.append(net.state_dict()[k].detach().cpu().numpy())
 
-    visual_out_path = "./outputs/synthetic_outputs/weight_visualization/"
-
+    # Weight Value Histogram
     if is_warp:
-        print("Model is shared. ")
+        # print("Model is shared. ")
         for w in warp_params:
             _ = plt.hist(w, bins=20, range=(0., 1.))  # arguments are passed to np.histogram
             plt.title("Symmetry Matrix absolute Weights Histogram ")
-            if not os.path.exists(visual_out_path + "hist_dist/"):
-                os.makedirs(visual_out_path + "hist_dist/")
-            plt.savefig(visual_out_path+"hist_dist/" + project_name + "-" + group_name + "-" +str(args.tasks_number))
+            if not os.path.exists(os.path.join(visual_out_path, "hist_dist")):
+                os.makedirs(os.path.join(visual_out_path, "hist_dist"))
+            plt.savefig(os.path.join(visual_out_path, "hist_dist", visual_file_name + '.png'))
             plt.close()
 
+    # Symmetry Matrix Visulaization
     for i in range(len(net)):
         if isinstance(net[0], layers.ShareLinearFull):
             in_features = net[0].in_features
@@ -124,11 +112,12 @@ def main():
             plt.imshow(x, cmap='viridis', interpolation='nearest')
             plt.title("Symmetry Matrix absolute Weights (maximum over filter size) ")
             plt.colorbar()
-            if not os.path.exists(visual_out_path + "heat_sym_matrix/"):
-                os.makedirs(visual_out_path + "heat_sym_matrix/")
+            if not os.path.exists(os.path.join(visual_out_path, "heat_sym_matrix")):
+                os.makedirs(os.path.join(visual_out_path, "heat_sym_matrix"))
             plt.xticks([])
             plt.yticks([])
-            plt.savefig(visual_out_path + "heat_sym_matrix/" + project_name + "-" + group_name + "-" + str(args.tasks_number))
+            plt.savefig(os.path.join(visual_out_path, "heat_sym_matrix", visual_file_name + '.png'))
+
 
 """
 def params_histogram(params_tensor):

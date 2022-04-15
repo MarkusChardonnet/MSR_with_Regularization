@@ -16,7 +16,7 @@ import layers
 from synthetic_loader import SyntheticLoader
 from inner_optimizers import InnerOptBuilder
 
-OUTPUT_PATH = "./outputs/synthetic_outputs"
+OUTPUT_PATH = "./outputs/synthetic_outputs/base_model"
 
 TRAIN_BATCH = 32
 TEST_BATCH = 10
@@ -101,7 +101,7 @@ def main():
 	parser.add_argument("--problem", type=str, default="rank1")
 	parser.add_argument("--model", type=str, default="conv")
 	parser.add_argument("--device", type=str, default="cpu")
-	parser.add_argument("--tasks_number", type=str, default=None)           #
+	parser.add_argument("--tasks_number", type=str, default=100)           #
 
 	if not os.path.exists(OUTPUT_PATH):
 		os.makedirs(OUTPUT_PATH)

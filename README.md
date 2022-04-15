@@ -26,7 +26,9 @@ python generate_synthetic_data.py --problem rank1
 In order to generate data for `2d_rot8` (17G) and `2d_rot8_flip` (6.6G), install PyTorch version `1.1` and use a machine with CUDA support and a large RAM size. 
 
 ### Train
-The file `train_synthetic.py` contains training and evaluation code. Specifying the argument `model` controls whether to use MSR, plain MAML, or something else.
+The file `train_synthetic.py` contains training and evaluation code. 
+The file `train_synthetic_sparsity.py` contains nearly the same except that the training method includes the regularization method of Yoon. et. al. (https://proceedings.mlr.press/v70/yoon17a/yoon17a.pdf), in the outer loop.
+Specifying the argument `model` controls whether to use MSR, plain MAML, or something else.
 
 Some examples are given below:
 ```sh
@@ -35,13 +37,18 @@ python train_synthetic.py --problem rank1 --model fc  # MAML+FC on rank1 problem
 python train_synthetic.py --problem rank1 --model conv  # MAML+Conv model on rank1 problem.
 python train_synthetic.py --problem 2d_rot8 --model share_conv  # MSR+Conv on 2d_rot8 problem.
 python train_synthetic.py --problem 2d_rot8 --model conv  # MAML+Conv on 2d_rot8 problem.
+
+
+python train_synthetic_sparsity.py --problem rank1 --ntasks 100 --model share_fc  # MSR+FC+regularization on rank1 problem with 100 tasks.
+python train_synthetic_sparsity.py --problem 2d_rot8 --ntasks 50 --model share_conv  # MSR+Conv+regularization on 2d_rot8 problem with 50 tasks.
 ```
 
 In order to run experiments with `share_conv`, use PyTorch `1.4.0`. Neither PyTorch `1.1` nor PyTorch `1.8.0` will work. 
 
 ## Test for visualizing the parameter distribution
 ```sh
-python test.py --problem rank1 --model share_fc  # MSR+FC on rank1 problem.
+python test.py --problem rank1 --ntasks 100 --model share_fc --trainer sparsity  # MSR+FC+regularization on rank1 problem with 100 tasks.
+python test.py --problem 2d_rot8 --ntasks 50 --model share_conv --trainer sparsity # MSR+Conv+regularization on 2d_rot8 problem with 50 tasks.
 ```
 
 ## Augmented-(Omniglot/Miniimagenet)
