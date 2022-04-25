@@ -12,7 +12,7 @@ def experiment():
         for d in permutations_dicts:
             infos = "--problem " + d["problem"] + " --model " + d["model"] + " --ntasks " + str(d["ntasks"]) + \
                     " --lam_reg " + str(d["lam_reg"]) + " --num_outer_steps " + str(d["epochs"]) + " --trainer " + d["trainer"]
-            train = "python " + os.path.join(os.path.dirname(__file__)) + "train_synthetic_sparsity.py " + infos
+            train = "python " + os.path.join(os.path.dirname(__file__)) + "train_synthetic.py " + infos
             test = "python " + os.path.join(os.path.dirname(__file__)) + "test.py " + infos + " < 1"
             f.write(train + '\n')
             f.write(test + '\n')
@@ -22,12 +22,13 @@ def experiment():
 def run_experiments():
     keys, values = zip(*parameters.items())
     permutations_dicts = [dict(zip(keys, v)) for v in itertools.product(*values)]
-
+    print("Training ", len(permutations_dicts), " models.")
     for i, d in enumerate(permutations_dicts):
         infos = "--problem " + d["problem"] + " --model " + d["model"] + " --ntasks " + str(d["ntasks"]) + \
                 " --lam_reg " + str(d["lam_reg"]) + " --num_outer_steps " + str(d["epochs"]) + " --trainer " + d[
                     "trainer"]
-        train = "python " + os.path.join(os.path.dirname(__file__)) + "train_synthetic_sparsity.py " + infos
+        train = "python " + os.path.join(os.path.dirname(__file__)) + "train_synthetic.py " + infos + \
+            " --device cuda"
         test = "python " + os.path.join(os.path.dirname(__file__)) + "test.py " + infos
         print("run " + str(i) + " : parameters " + str(d))
         os.system(train)
@@ -46,5 +47,5 @@ def generate_datasets():
 
 
 if __name__ == "__main__":
-    generate_datasets()
-    # run_experiments()
+    # generate_datasets()
+    run_experiments()

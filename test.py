@@ -8,7 +8,7 @@ from torch import nn
 import matplotlib.pyplot as plt
 from synthetic_loader import SyntheticLoader
 from inner_optimizers import InnerOptBuilder
-import train_synthetic_sparsity
+import train_synthetic
 
 import layers
 
@@ -16,7 +16,7 @@ from os import listdir
 from os.path import isfile, join
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
-from train_synthetic_sparsity import PathFileNames
+from train_synthetic import PathFileNames
 
 
 def main():

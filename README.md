@@ -32,15 +32,9 @@ Specifying the argument `model` controls whether to use MSR, plain MAML, or some
 
 Some examples are given below:
 ```sh
-python train_synthetic.py --problem rank1 --model share_fc  # MSR+FC on rank1 problem.
-python train_synthetic.py --problem rank1 --model fc  # MAML+FC on rank1 problem.
-python train_synthetic.py --problem rank1 --model conv  # MAML+Conv model on rank1 problem.
-python train_synthetic.py --problem 2d_rot8 --model share_conv  # MSR+Conv on 2d_rot8 problem.
-python train_synthetic.py --problem 2d_rot8 --model conv  # MAML+Conv on 2d_rot8 problem.
 
-
-python train_synthetic_sparsity.py --problem rank1 --ntasks 100 --model share_fc  # MSR+FC+regularization on rank1 problem with 100 tasks.
-python train_synthetic_sparsity.py --problem 2d_rot8 --ntasks 50 --model share_conv  # MSR+Conv+regularization on 2d_rot8 problem with 50 tasks.
+python train_synthetic.py --problem rank1 --ntasks 100 --model share_fc  # MSR+FC on rank1 problem with 100 tasks.
+python train_synthetic.py --problem rank2_kernel5 --ntasks 50 --model share_fc --trainer sparsity  # MSR+FC+regularization on rank2_kernel5 problem with 50 tasks.
 ```
 
 In order to run experiments with `share_conv`, use PyTorch `1.4.0`. Neither PyTorch `1.1` nor PyTorch `1.8.0` will work. 

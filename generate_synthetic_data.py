@@ -13,7 +13,7 @@ from layers import LocallyConnected1d
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
-def generate_1d(out_path, ntasks = 100):
+def generate_1d(out_path, ntasks = 100, nsamples = 20):
     lc_layer = LocallyConnected1d(1, 1, 68, bias=False)
     xs, ys, ws = [], [], []
     for task_idx in range(ntasks):
@@ -22,7 +22,7 @@ def generate_1d(out_path, ntasks = 100):
         ws.append(filt)
         lc_layer.weight = nn.Parameter(torch.from_numpy(filt))
         task_xs, task_ys = [], []
-        inp = np.random.randn(20, 1, 70).astype(np.float32)
+        inp = np.random.randn(nsamples, 1, 70).astype(np.float32)
         result = lc_layer(torch.from_numpy(inp))  # (20, 1, 68)
         result = result.cpu().detach().numpy()
         xs.append(inp)
@@ -33,7 +33,7 @@ def generate_1d(out_path, ntasks = 100):
     np.savez(out_path, x=xs, y=ys, w=ws)
 
 
-def generate_1d_low_rank(out_path, rank=2, ntasks = 100):
+def generate_1d_low_rank(out_path, rank=2, ntasks = 100, nsamples = 20):
     lc_layer = LocallyConnected1d(1, 1, 68, bias=False)
     xs, ys, ws = [], [], []
     connectivity = softmax(np.random.randn(68, rank), axis=1)  # shape == (68, rank)
@@ -44,7 +44,7 @@ def generate_1d_low_rank(out_path, rank=2, ntasks = 100):
         ws.append(filt)
         lc_layer.weight = nn.Parameter(torch.from_numpy(filt))
         task_xs, task_ys = [], []
-        inp = np.random.randn(20, 1, 70).astype(np.float32)
+        inp = np.random.randn(nsamples, 1, 70).astype(np.float32)
         result = lc_layer(torch.from_numpy(inp))  # (20, 1, 68)
         result = result.cpu().detach().numpy()
         xs.append(inp)
@@ -55,7 +55,7 @@ def generate_1d_low_rank(out_path, rank=2, ntasks = 100):
     np.savez(out_path, x=xs, y=ys, w=ws)
 
 
-def generate_1d_low_rank_kernel5(out_path, rank=2, kernel_size=5, ntasks = 100):
+def generate_1d_low_rank_kernel5(out_path, rank=2, kernel_size=5, ntasks = 100, nsamples = 20):
     lc_layer = LocallyConnected1d(1, 1, 68, bias=False, kernel_size=kernel_size)
     xs, ys, ws = [], [], []
     connectivity = softmax(np.random.randn(68, rank), axis=1)  # shape == (68, rank)
@@ -66,7 +66,7 @@ def generate_1d_low_rank_kernel5(out_path, rank=2, kernel_size=5, ntasks = 100):
         ws.append(filt)
         lc_layer.weight = nn.Parameter(torch.from_numpy(filt))
         task_xs, task_ys = [], []
-        inp = np.random.randn(20, 1, 72).astype(np.float32)
+        inp = np.random.randn(nsamples, 1, 72).astype(np.float32)
         result = lc_layer(torch.from_numpy(inp))  # (20, 1, 68)
         result = result.cpu().detach().numpy()
         xs.append(inp)
@@ -77,7 +77,7 @@ def generate_1d_low_rank_kernel5(out_path, rank=2, kernel_size=5, ntasks = 100):
     np.savez(out_path, x=xs, y=ys, w=ws)
 
 
-def generate_2d_rot4(out_path, ntasks = 100):
+def generate_2d_rot4(out_path, ntasks = 100, nsamples = 20):
     r2_act = gspaces.Rot2dOnR2(N=4)
     feat_type_in = gnn.FieldType(r2_act, [r2_act.trivial_repr])
     feat_type_out = gnn.FieldType(r2_act, 3 * [r2_act.regular_repr])
@@ -85,7 +85,7 @@ def generate_2d_rot4(out_path, ntasks = 100):
     xs, ys, ws = [], [], []
     for task_idx in range(ntasks):
         gnn.init.generalized_he_init(conv.weights, conv.basisexpansion)
-        inp = gnn.GeometricTensor(torch.randn(20, 1, 32, 32), feat_type_in)
+        inp = gnn.GeometricTensor(torch.randn(nsamples, 1, 32, 32), feat_type_in)
         result = conv(inp).tensor.detach().cpu().numpy()
         xs.append(inp.tensor.detach().cpu().numpy())
         ys.append(result)
@@ -96,7 +96,7 @@ def generate_2d_rot4(out_path, ntasks = 100):
     np.savez(out_path, x=xs, y=ys, w=ws)
 
 
-def generate_2d_rot8(out_path, ntasks = 100):
+def generate_2d_rot8(out_path, ntasks = 100, nsamples = 20):
     r2_act = gspaces.Rot2dOnR2(N=8)
     feat_type_in = gnn.FieldType(r2_act, [r2_act.trivial_repr])
     feat_type_out = gnn.FieldType(r2_act, 3 * [r2_act.regular_repr])
@@ -104,7 +104,7 @@ def generate_2d_rot8(out_path, ntasks = 100):
     xs, ys, ws = [], [], []
     for task_idx in range(ntasks):
         gnn.init.generalized_he_init(conv.weights, conv.basisexpansion)
-        inp = gnn.GeometricTensor(torch.randn(20, 1, 32, 32), feat_type_in)
+        inp = gnn.GeometricTensor(torch.randn(nsamples, 1, 32, 32), feat_type_in)
         result = conv(inp).tensor.detach().cpu().numpy()
         xs.append(inp.tensor.detach().cpu().numpy())
         ys.append(result)
@@ -115,7 +115,7 @@ def generate_2d_rot8(out_path, ntasks = 100):
     np.savez(out_path, x=xs, y=ys, w=ws)
 
 
-def generate_2d_rot8_flip(out_path, ntasks = 100):
+def generate_2d_rot8_flip(out_path, ntasks = 100, nsamples = 20):
     r2_act = gspaces.FlipRot2dOnR2(N=8)
     feat_type_in = gnn.FieldType(r2_act, [r2_act.trivial_repr])
     feat_type_out = gnn.FieldType(r2_act, 3 * [r2_act.regular_repr])
@@ -124,7 +124,7 @@ def generate_2d_rot8_flip(out_path, ntasks = 100):
     conv = gnn.R2Conv(feat_type_in, feat_type_out, kernel_size=3, bias=False).to(device)
     for task_idx in range(ntasks):
         gnn.init.generalized_he_init(conv.weights, conv.basisexpansion)
-        inp = gnn.GeometricTensor(torch.randn(20, 1, 32, 32).to(device), feat_type_in)
+        inp = gnn.GeometricTensor(torch.randn(nsamples, 1, 32, 32).to(device), feat_type_in)
         result = conv(inp).tensor.detach().cpu().numpy()
         xs.append(inp.tensor.detach().cpu().numpy())
         ys.append(result)
@@ -169,9 +169,9 @@ def main():
     if args.problem == "rank1":
         generate_1d(out_path, ntasks = args.ntasks)
     elif args.problem == "rank2":
-        generate_1d_low_rank(out_path, args.ntasks, rank=2, ntasks = args.ntasks)
+        generate_1d_low_rank(out_path, rank=2, ntasks = args.ntasks)
     elif args.problem == "rank5":
-        generate_1d_low_rank(out_path, args.ntasks, rank=5, ntasks = args.ntasks)
+        generate_1d_low_rank(out_path, rank=5, ntasks = args.ntasks)
     elif args.problem == "2d_rot8":
         generate_2d_rot8(out_path, ntasks = args.ntasks)
     elif args.problem == "2d_rot8_flip":
