@@ -1,5 +1,8 @@
-# Meta-learning Symmetries by Reparameterization (MSR)
-Code and weights corresponding to Meta-learning Symmetries by Reparameterization, found at this [arXiv link](https://arxiv.org/abs/2007.02933).
+# MSR with Regularization
+
+This project builds upon the implementation of the paper "Meta-learning symmetries by reparameterization" (MSR) ([arXiv link](https://arxiv.org/abs/2007.02933)) and introduces new features to enhance stability and generalization in meta-learning by enforcing sparsity in the symmetry representation. The primary focus is on extending the functionality of the train_synthetic.py file from the official MSR implementation.
+
+The official implementation of MSR can be found at: https://github.com/AllanYangZhou/metalearning-symmetries
 
 ## Installation and requirements
 All experiments were run in a conda environment with python 3.7.5, using pytorch. The conda environment we used is exported in `environment.yml`, though it likely contains more packages than are strictly necessary.
@@ -39,12 +42,11 @@ python train_synthetic.py --problem rank2_kernel5 --ntasks 50 --model share_fc -
 
 In order to run experiments with `share_conv`, use PyTorch `1.4.0`. Neither PyTorch `1.1` nor PyTorch `1.8.0` will work. 
 
-## Test for visualizing the parameter distribution
+### Test for visualizing the parameter distribution
 ```sh
 python test.py --problem rank1 --ntasks 100 --model share_fc --trainer sparsity  # MSR+FC+regularization on rank1 problem with 100 tasks.
 python test.py --problem 2d_rot8 --ntasks 50 --model share_conv --trainer sparsity # MSR+Conv+regularization on 2d_rot8 problem with 50 tasks.
 ```
 
-## Augmented-(Omniglot/Miniimagenet)
-
-WIP
+## Acknowledgments
+This project is built upon the official implementation of the paper "Meta-learning symmetries by reparameterization" (MSR). We thank the authors for their valuable work.
